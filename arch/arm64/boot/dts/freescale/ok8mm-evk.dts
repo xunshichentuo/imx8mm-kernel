@@ -45,6 +45,12 @@
 		};
 	};
 
+	user_gpio {
+		compatible = "user,gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_gpio_led>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		autorepeat;
