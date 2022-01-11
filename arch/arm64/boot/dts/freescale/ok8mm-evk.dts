@@ -47,8 +47,9 @@
 
 	user_gpio {
 		compatible = "user,gpio";
+		user-gpios= <&gpio5 4 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_led>;
+		pinctrl-0 = <&pinctrl_user_gpio>;
 	};
 
 	gpio-keys {
