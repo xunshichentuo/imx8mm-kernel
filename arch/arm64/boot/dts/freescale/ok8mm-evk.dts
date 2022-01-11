@@ -173,6 +173,12 @@
 	pinctrl-names = "default";
 
 	imx8mm-evk {
+		pinctrl_user_gpio: user_gpio_grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_SPDIF_RX_GPIO5_IO4		0x16
+			>;
+		};
+
 		pinctrl_csi_pwn: csi_pwn_grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_SAI3_TXD_GPIO5_IO1		0x19
