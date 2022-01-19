@@ -52,6 +52,16 @@
 		pinctrl-0 = <&pinctrl_user_gpio>;
 	};
 
+	pump_gpio {
+		compatible = "sprintray,pumps";
+		pump0-gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>;
+		pump1-gpios = <&gpio2 18 GPIO_ACTIVE_HIGH>;
+		pump2-gpios = <&gpio2 17 GPIO_ACTIVE_HIGH>;
+		pump3-gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pump_gpio>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		autorepeat;
@@ -101,6 +111,7 @@
 			enable-active-high;
 		};
 
+/*
 		reg_usdhc2_vmmc: regulator-usdhc2 {
 			compatible = "regulator-fixed";
 			regulator-name = "VSD_3V3";
@@ -110,7 +121,7 @@
 			off-on-delay = <20000>;
 			enable-active-high;
 		};
-
+*/
 		reg_usb_otg1_vbus: regulator@0 {
 			compatible = "regulator-fixed";
 			reg = <0>;
@@ -183,6 +194,15 @@
 		pinctrl_user_gpio: user_gpio_grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_SPDIF_RX_GPIO5_IO4		0x16
+			>;
+		};
+
+		pinctrl_pump_gpio: pump_gpio_grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_SD2_CMD_GPIO2_IO14			0x16
+				MX8MM_IOMUXC_SD2_DATA3_GPIO2_IO18		0x16
+				MX8MM_IOMUXC_SD2_DATA2_GPIO2_IO17		0x16
+				MX8MM_IOMUXC_SD2_RESET_B_GPIO2_IO19		0x16
 			>;
 		};
 
@@ -398,12 +418,14 @@
 			>;
 		};
 
+/*
 		pinctrl_usdhc2_gpio: usdhc2grpgpio {
 			fsl,pins = <
 				MX8MM_IOMUXC_SD2_CD_B_GPIO2_IO12	0x1c4
 				MX8MM_IOMUXC_SD2_RESET_B_GPIO2_IO19	0x41
 			>;
 		};
+*/
 
 		pinctrl_usdhc2: usdhc2grp {
 			fsl,pins = <
@@ -1115,6 +1137,7 @@
 	status = "okay";
 };
 
+/*
 &usdhc2 {
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
 	pinctrl-0 = <&pinctrl_usdhc2>, <&pinctrl_usdhc2_gpio>;
@@ -1123,8 +1146,9 @@
 	cd-gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
 	bus-width = <4>;
 	vmmc-supply = <&reg_usdhc2_vmmc>;
-	status = "okay";
+	status = "disabled";
 };
+*/
 
 &usdhc3 {
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
