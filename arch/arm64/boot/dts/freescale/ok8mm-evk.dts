@@ -68,8 +68,8 @@
 		door1-gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_door_gpio>;
-		interrupt-parent = <&gpio2>;
-		interrupts = <200 3>, <201 3>;
+		interrupts-extended = <&gpio2 15 3>,
+			<&gpio2 13 3>;
 	};
 
 	gpio-keys {
