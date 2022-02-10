@@ -15,6 +15,8 @@ struct gpio_door {
 	int irq;
 };
 static struct gpio_door *gpio_doors;
+static int door_major = 0;
+static struct class *door_class;
 
 static irqreturn_t door_irq_request(int irq, void *dev_id)
 {
@@ -36,6 +38,66 @@ static void clean_gpios(void)
         printk("%s gpiod_put door1 \n", __FUNCTION__);
         gpiod_put(gpio_doors[1].gpiod);
     }
+}
+static int door_drv_open(struct inode *node, struct file *file)
+{
+	return 0;
+}
+
+static ssize_t door_drv_read(struct file *file, char __user *buf, size_t size, loff_t *offset)
+{
+	return 0;
+}
+
+static ssize_t door_drv_write(struct file *file, const char __user *buf, size_t size, loff_t *offset)
+{
+	return 0;
+}
+
+static int door_drv_close(struct inode *node, struct file *file)
+{
+	printk("%s %s line %d\n", __FILE__, __FUNCTION__, __LINE__);
+	return 0;
+}
+
+static struct file_operations doors_ops = {
+	.owner = THIS_MODULE,
+	.open = door_drv_open,
+	.read = door_drv_read,
+	.write = door_drv_write,
+	.release = door_drv_close,
+};
+
+static int create_door_chrdev(void)
+{
+	door_major = register_chrdev(0, "door", &doors_ops);
+	if(door_major < 0) {
+		printk(KERN_ERR"door: couldn't get a major number\n");
+		return -1;
+	}
+	
+	door_class = class_create(THIS_MODULE, "door_class");
+	if(IS_ERR(door_class)) {
+		printk(KERN_ERR"door class: create failed\n");
+		unregister_chrdev(door_major, "door");
+		return -1;
+	}
+
+	device_create(door_class, NULL, MKDEV(door_major, 0), NULL, "doors");
+
+	return 0;
+}
+
+static void delete_door_chrdev(void)
+{
+	if(!IS_ERR(door_class)) {
+		device_destroy(door_class, MKDEV(door_major, 0));
+		class_destroy(door_class);
+	}
+
+	if(door_major>=0) {
+		unregister_chrdev(door_major, "door");
+	}
 }
 
 static int doors_probe(struct platform_device *pdev)
@@ -71,7 +133,9 @@ static int doors_probe(struct platform_device *pdev)
 		}
 	}
 
-	return 0;
+	err = create_door_chrdev();
+
+	return err;
 }
 
 static int doors_remove(struct platform_device *pdev)
@@ -79,11 +143,12 @@ static int doors_remove(struct platform_device *pdev)
 	int i;
 	printk(KERN_WARNING"doors driver remove \n");
 
-	clean_gpios();
+	delete_door_chrdev();
 
 	for(i=0;i<DOOR_COUNT;i++) {
 		free_irq(gpio_doors[i].irq, &gpio_doors[i]);
 	}
+	clean_gpios();
 
 	kfree(gpio_doors);
 	return 0;
