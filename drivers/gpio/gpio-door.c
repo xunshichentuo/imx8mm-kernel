@@ -7,10 +7,12 @@
 #include <linux/of_irq.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
-
+#include <linux/wait.h>
+#include <linux/uaccess.h>
 
 #define DOOR_COUNT 2
 struct gpio_door {
+	int index;
 	struct gpio_desc *gpiod;
 	int irq;
 };
@@ -18,13 +20,19 @@ static struct gpio_door *gpio_doors;
 static int door_major = 0;
 static struct class *door_class;
 
+static int g_door = 0;
+static DECLARE_WAIT_QUEUE_HEAD(gpio_door_wait);
+
 static irqreturn_t door_irq_request(int irq, void *dev_id)
 {
 	struct gpio_door *door = dev_id;
 	int val;
 	val = gpiod_get_value(door->gpiod);
 
-	printk(KERN_WARNING"key %d\n", val);
+	g_door = (door->index<<8)| val;
+	printk(KERN_WARNING"key %d %d %x\n", door->index, val, g_door);
+	wake_up_interruptible(&gpio_door_wait);
+
 	return IRQ_HANDLED;
 }
 
@@ -39,6 +47,7 @@ static void clean_gpios(void)
         gpiod_put(gpio_doors[1].gpiod);
     }
 }
+
 static int door_drv_open(struct inode *node, struct file *file)
 {
 	return 0;
@@ -46,7 +55,15 @@ static int door_drv_open(struct inode *node, struct file *file)
 
 static ssize_t door_drv_read(struct file *file, char __user *buf, size_t size, loff_t *offset)
 {
-	return 0;
+	int err;
+
+	wait_event_interruptible(gpio_door_wait, g_door);
+	err = copy_to_user(buf, &g_door, 4);
+	g_door = 0;
+	if(err != 4) {
+		return -1;
+	}
+	return 4;
 }
 
 static ssize_t door_drv_write(struct file *file, const char __user *buf, size_t size, loff_t *offset)
@@ -118,12 +135,13 @@ static int doors_probe(struct platform_device *pdev)
 			clean_gpios();
 			return err;
 		}
+		gpio_doors[i].index = i;
 	}
 
 	if(node) {
 		for(i=0;i<DOOR_COUNT;i++) {
 			gpio_doors[i].irq= of_irq_get(node, i);
-			printk(KERN_WARNING"door%d driver get irq num:%d\n", i, gpio_doors[i].irq);
+			printk(KERN_WARNING"door%d driver get irq num:%d \n", i, gpio_doors[i].irq);
 			err = request_irq(gpio_doors[i].irq, door_irq_request, 
 					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
 					"door-irq", &gpio_doors[i]); 
