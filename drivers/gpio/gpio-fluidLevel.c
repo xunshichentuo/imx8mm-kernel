@@ -10,6 +10,7 @@
 #include <linux/wait.h>
 #include <linux/uaccess.h>
 #include <linux/gpio/consumer.h>
+#include "buffer.h"
 
 struct fluid_level_data {
 	int index;
@@ -28,6 +29,7 @@ static struct class *fluid_level_class;
 
 static int g_fluid_level = 0;
 static DECLARE_WAIT_QUEUE_HEAD(fluid_level_wait);
+static Queue irqBuff;
 
 static irqreturn_t fluid_level_irq_request(int irq, void *dev_id)
 {
@@ -38,6 +40,7 @@ static irqreturn_t fluid_level_irq_request(int irq, void *dev_id)
 	g_fluid_level = (fluid_level->index<<8)|val;
 	printk(KERN_WARNING"fluid level %d %d %x\n", 
 			fluid_level->index, val, g_fluid_level);
+	AddQ(irqBuff, val);
 	wake_up_interruptible(&fluid_level_wait);
 
 	return IRQ_HANDLED;
@@ -46,8 +49,10 @@ static irqreturn_t fluid_level_irq_request(int irq, void *dev_id)
 static ssize_t fluid_level_read(struct file *file, char __user *buf, size_t size, loff_t *offset)
 {
 	int err;
+	int val;
 	
-	wait_event_interruptible(fluid_level_wait, g_fluid_level);
+	wait_event_interruptible(fluid_level_wait, !IsEmpty(irqBuff));
+	val = DeleteQ(irqBuff);
 	err = copy_to_user(buf, &g_fluid_level, 4);
 	g_fluid_level = 0;
 	if(err != 4) {
@@ -192,6 +197,7 @@ static struct platform_driver fluid_level_driver = {
 static int fluid_level_init(void)
 {
 	int err;
+	irqBuff = (Queue)kzalloc(sizeof(struct QNode), GFP_KERNEL);
 	err = platform_driver_register(&fluid_level_driver);
 	printk(KERN_WARNING"%s\n", __FUNCTION__);
 	return 0;
@@ -200,6 +206,7 @@ static int fluid_level_init(void)
 static void fluid_level_exit(void)
 {
 	platform_driver_unregister(&fluid_level_driver);
+	kfree(irqBuff);
 	printk(KERN_WARNING"%s\n", __FUNCTION__);
 }
 
