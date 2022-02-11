@@ -26,18 +26,33 @@ static struct gpio_descs *fluid_level_descs;
 static int fluid_level_major = 0;
 static struct class *fluid_level_class;
 
+static int g_fluid_level = 0;
+static DECLARE_WAIT_QUEUE_HEAD(fluid_level_wait);
+
 static irqreturn_t fluid_level_irq_request(int irq, void *dev_id)
 {
 	struct fluid_level_data *fluid_level = dev_id;
 	int val;
 	val = gpiod_get_value(fluid_level->desc);
-	printk(KERN_WARNING"fluid level %d %d \n", fluid_level->index, val);
+
+	g_fluid_level = (fluid_level->index<<8)|val;
+	printk(KERN_WARNING"fluid level %d %d %x\n", 
+			fluid_level->index, val, g_fluid_level);
+	wake_up_interruptible(&fluid_level_wait);
 
 	return IRQ_HANDLED;
 }
 
 static ssize_t fluid_level_read(struct file *file, char __user *buf, size_t size, loff_t *offset)
 {
+	int err;
+	
+	wait_event_interruptible(fluid_level_wait, g_fluid_level);
+	err = copy_to_user(buf, &g_fluid_level, 4);
+	g_fluid_level = 0;
+	if(err != 4) {
+		return -1;
+	}
 	
 	return 0;
 }
@@ -80,7 +95,8 @@ static void delete_fluid_level_chrdev(void)
 	}
 }
 
-static int request_fluid_level_irq(struct platform_device *pdev, struct device_node *node, struct fluid_level_data *data)
+static int request_fluid_level_irq(struct platform_device *pdev, 
+		struct device_node *node, struct fluid_level_data *data)
 {
 	int err = 0;
 	if(!node) return -1;
