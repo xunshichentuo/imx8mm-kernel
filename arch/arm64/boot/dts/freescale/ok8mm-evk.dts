@@ -72,6 +72,16 @@
 			<&gpio2 13 3>;
 	};
 
+	fluidLevel {
+		compatible = "sprintray,fluidLevel";
+		fluidLevel-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>,
+						<&gpio2 12 GPIO_ACTIVE_LOW>,
+						<&gpio2 16 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_fluidLevel_gpio>;
+		interrupts-extended = <&gpio2 20 3>, <&gpio2 12 3>, <&gpio2 16 3>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		autorepeat;
@@ -220,6 +230,14 @@
 			fsl,pins = <
 				MX8MM_IOMUXC_SD2_DATA0_GPIO2_IO15 		0x19
 				MX8MM_IOMUXC_SD2_CLK_GPIO2_IO13 		0x19
+			>;
+		};
+
+		pinctrl_fluidLevel_gpio: fluidLevel_gpio_grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_SD2_WP_GPIO2_IO20				0x19
+				MX8MM_IOMUXC_SD2_CD_B_GPIO2_IO12			0x19
+				MX8MM_IOMUXC_SD2_DATA1_GPIO2_IO16			0x19
 			>;
 		};
 
