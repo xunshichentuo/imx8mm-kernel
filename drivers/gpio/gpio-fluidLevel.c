@@ -40,7 +40,7 @@ static irqreturn_t fluid_level_irq_request(int irq, void *dev_id)
 	g_fluid_level = (fluid_level->index<<8)|val;
 	printk(KERN_WARNING"fluid level %d %d %x\n", 
 			fluid_level->index, val, g_fluid_level);
-	AddQ(irqBuff, val);
+	AddQ(irqBuff, g_fluid_level);
 	wake_up_interruptible(&fluid_level_wait);
 
 	return IRQ_HANDLED;
@@ -53,7 +53,7 @@ static ssize_t fluid_level_read(struct file *file, char __user *buf, size_t size
 	
 	wait_event_interruptible(fluid_level_wait, !IsEmpty(irqBuff));
 	val = DeleteQ(irqBuff);
-	err = copy_to_user(buf, &g_fluid_level, 4);
+	err = copy_to_user(buf, &val, 4);
 	g_fluid_level = 0;
 	if(err != 4) {
 		return -1;

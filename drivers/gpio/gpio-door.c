@@ -9,6 +9,7 @@
 #include <linux/interrupt.h>
 #include <linux/wait.h>
 #include <linux/uaccess.h>
+#include "buffer.h"
 
 #define DOOR_COUNT 2
 struct gpio_door {
@@ -22,6 +23,7 @@ static struct class *door_class;
 
 static int g_door = 0;
 static DECLARE_WAIT_QUEUE_HEAD(gpio_door_wait);
+static Queue irqBuffer;
 
 static irqreturn_t door_irq_request(int irq, void *dev_id)
 {
@@ -31,6 +33,7 @@ static irqreturn_t door_irq_request(int irq, void *dev_id)
 
 	g_door = (door->index<<8)| val;
 	printk(KERN_WARNING"key %d %d %x\n", door->index, val, g_door);
+	AddQ(irqBuffer, g_door);
 	wake_up_interruptible(&gpio_door_wait);
 
 	return IRQ_HANDLED;
@@ -56,9 +59,11 @@ static int door_drv_open(struct inode *node, struct file *file)
 static ssize_t door_drv_read(struct file *file, char __user *buf, size_t size, loff_t *offset)
 {
 	int err;
+	int val;
 
-	wait_event_interruptible(gpio_door_wait, g_door);
-	err = copy_to_user(buf, &g_door, 4);
+	wait_event_interruptible(gpio_door_wait, !IsEmpty(irqBuffer));
+	val = DeleteQ(irqBuffer);
+	err = copy_to_user(buf, &val, 4);
 	g_door = 0;
 	if(err != 4) {
 		return -1;
@@ -189,6 +194,7 @@ static struct platform_driver doors_driver = {
 static int door_init(void)
 {
 	int err;
+	irqBuffer = (Queue)kzalloc(sizeof(struct QNode), GFP_KERNEL);
 	err = platform_driver_register(&doors_driver);
 	printk(KERN_WARNING"doors driver init\n");
 	return 0;
@@ -197,6 +203,7 @@ static int door_init(void)
 static void door_exit(void)
 {
 	platform_driver_unregister(&doors_driver);
+	kfree(irqBuffer);
 	printk(KERN_WARNING"doors driver exit\n");
 }
 
