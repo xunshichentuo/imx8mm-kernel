@@ -1033,8 +1033,9 @@
 &fec1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_fec1>;
+	reset-gpio = <&gpio2 10 GPIO_ACTIVE_LOW>;
 	phy-mode = "rgmii-id";
-	phy-handle = <&ethphy0>;
+	phy-handle = <&ethphy1>;
 	fsl,magic-packet;
 	status = "okay";
 
@@ -1042,6 +1043,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		ethphy1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+			eee-broken-1000t;
+			at803x,vddio-1p8v;
+		};
+
+/*
 		ethphy0: ethernet-phy@1 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <1>;
@@ -1049,6 +1058,7 @@
 			at803x,eee-okay;
 			at803x,vddio-1p8v;
 		};
+ */
 	};
 };
 
