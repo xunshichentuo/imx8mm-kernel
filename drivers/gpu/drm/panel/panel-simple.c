@@ -2397,6 +2397,35 @@ static const struct panel_desc_dsi forlinx_mipi7 = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode aml500h_25103_mode = {
+	.clock = 28000,
+	.hdisplay = 480,
+	.hsync_start = 480 + 20,
+	.hsync_end = 480 + 20 + 80,
+	.htotal = 480 + 20 + 80 + 20,
+	.vdisplay = 854,
+	.vsync_start = 854 + 10,
+	.vsync_end = 854 + 10 + 10,
+	.vtotal = 854 + 60 + 10 + 10,
+	.vrefresh = 60,
+};
+
+static const struct panel_desc_dsi aml500h_25103 = {
+	.desc = {
+		.modes = &aml500h_25103_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 156,
+			.height = 90,
+		},
+		.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 2,
+};
+
 static const struct of_device_id dsi_of_match[] = {
 	{
 		.compatible = "auo,b080uan01",
@@ -2416,6 +2445,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "forlinx,mipi7",
 		.data = &forlinx_mipi7,
+	}, {
+		.compatible = "aml500h25103",
+		.data = &aml500h_25103,
 	}, {
 		/* sentinel */
 	}

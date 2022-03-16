@@ -1032,9 +1032,9 @@ Output:
 *******************************************************/
 static void gtp_int_sync(s32 ms)
 {
-    GTP_GPIO_OUTPUT(gtp_int_gpio, 0);
+//    GTP_GPIO_OUTPUT(gtp_int_gpio, 0);
     msleep(ms);
-    GTP_GPIO_AS_INT(gtp_int_gpio);
+//    GTP_GPIO_AS_INT(gtp_int_gpio);
 }
 
 
@@ -1051,6 +1051,7 @@ static void gtp_reset_guitar(struct i2c_client *client, s32 ms)
 #if GTP_COMPATIBLE_MODE
     struct goodix_ts_data *ts = i2c_get_clientdata(client);
 #endif    
+	return;
 
     GTP_DEBUG_FUNC();
     GTP_INFO("Guitar reset");
@@ -1164,7 +1165,7 @@ static s8 gtp_enter_sleep(struct goodix_ts_data * ts)
     }
 #endif
 
-    GTP_GPIO_OUTPUT(gtp_int_gpio, 0);
+//    GTP_GPIO_OUTPUT(gtp_int_gpio, 0);
     msleep(5);
     
     while(retry++ < 5)
@@ -1203,7 +1204,7 @@ static s8 gtp_wakeup_sleep(struct goodix_ts_data * ts)
     {
         u8 opr_buf[3] = {0x41, 0x80};
         
-        GTP_GPIO_OUTPUT(gtp_int_gpio, 1);
+//        GTP_GPIO_OUTPUT(gtp_int_gpio, 1);
         msleep(5);
     
         for (retry = 0; retry < 10; ++retry)
@@ -1277,7 +1278,7 @@ static s8 gtp_wakeup_sleep(struct goodix_ts_data * ts)
         gtp_irq_enable(ts);
         
     #else
-        GTP_GPIO_OUTPUT(gtp_int_gpio, 1);
+//        GTP_GPIO_OUTPUT(gtp_int_gpio, 1);
         msleep(5);
     #endif
     
@@ -1728,7 +1729,7 @@ static s8 gtp_i2c_test_after_rst(struct i2c_client *client)
     u8 retry = 0;
     s8 ret = -1;
     s32 res = 0;
-
+#if 0
     res = GTP_GPIO_REQUEST(gtp_int_gpio, "GTP INT IRQ");
     if (res < 0)
     {
@@ -1759,7 +1760,7 @@ static s8 gtp_i2c_test_after_rst(struct i2c_client *client)
 
     GTP_GPIO_FREE(gtp_rst_gpio);
     GTP_GPIO_FREE(gtp_int_gpio);
-
+#endif
     GTP_DEBUG_FUNC();
 
     while(retry++ < 5)
@@ -1801,7 +1802,7 @@ static s8 gtp_request_io_port(struct goodix_ts_data *ts)
         ts->client->irq = gpio_to_irq(gtp_int_gpio);
     }
 
-    ret = GTP_GPIO_REQUEST(gtp_rst_gpio, "GTP RST PORT");
+/*    ret = GTP_GPIO_REQUEST(gtp_rst_gpio, "GTP RST PORT");
     if (ret < 0) 
     {
         GTP_ERROR("Failed to request GPIO:%d, ERRNO:%d",(s32)gtp_rst_gpio,ret);
@@ -1809,7 +1810,7 @@ static s8 gtp_request_io_port(struct goodix_ts_data *ts)
     }
 
     GTP_GPIO_AS_INPUT(gtp_rst_gpio);
-
+*/
     gtp_reset_guitar(ts->client, 20);
     
     if(ret < 0)

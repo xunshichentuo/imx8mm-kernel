@@ -806,29 +806,17 @@
 	pinctrl-0 = <&pinctrl_i2c4>;
 	status = "okay";
 
-        ft5x06_ts@38 {
-                compatible = "edt,edt-ft5x06";
-                reg = <0x38>;
-                pinctrl-names = "defaults";
-                pinctrl-0 = <&pinctrl_ft5x06_int>;
-                interrupt-parent = <&gpio1>;
-                interrupts = <10 2>;
-                status = "okay";
-        };
-
-	gt928_ts@5d {
-                compatible = "goodix,gt9xx";
-                reg = <0x5d>;
-                pinctrl-names = "default";
-                pinctrl-0 = <&pinctrl_ft5x06_int>;
-                interrupt-parent = <&gpio1>;
-                interrupts = <10 2>;
-                goodix,rst-gpio = <&gpio1 9 0>;
-                goodix,irq-gpio = <&gpio1 10 0>;
-                status = "okay";
-
-        };
-
+	gt928_ts@14 {
+		compatible = "goodix,gt9xx";
+		reg = <0x14>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ft5x06_int>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <10 2>;
+		goodix,rst-gpio = <&gpio1 9 0>;
+		goodix,irq-gpio = <&gpio1 10 0>;
+		status = "okay";
+	};
 
 	ov5640_mipi: ov5640_mipi@3c {
 		compatible = "ovti,ov5640_mipi";
@@ -854,54 +842,6 @@
 		};*/
 	};
 
-	lt8912_bridge_480p: lt8912_480p@48 {
-		compatible = "lontium,lt8912-480P";
-		reg = <0x48>;
-		status = "disabled";
-
-		port {
-			lt8912_from_dsim_480p: endpoint {
-//				remote-endpoint = <&dsim_to_lt8912_480p>;
-			};
-		};
-	};
-
-	lt8912_bridge_720p: lt8912_720p@48 {
-		compatible = "lontium,lt8912-720P";
-		reg = <0x48>;
-		status = "disabled";
-
-		port {
-			lt8912_from_dsim_720p: endpoint {
-//				remote-endpoint = <&dsim_to_lt8912_720p>;
-			};
-		};
-	};
-
-	lt8912_bridge_1080p: lt8912_1080p@48 {
-		compatible = "lontium,lt8912-1080P";
-		reg = <0x48>;
-		status = "disabled";
-
-		port {
-			lt8912_from_dsim_1080p: endpoint {
-//				remote-endpoint = <&dsim_to_lt8912_1080p>;
-			};
-		};
-	};
-
-	lt8912_bridge_WXGA: lt8912_wxga@48 {
-		compatible = "lontium,lt8912-WXGA";
-		reg = <0x48>;
-		status = "disabled";
-
-		port {
-			lt8912_from_dsim_wxga: endpoint {
-//				remote-endpoint = <&dsim_to_lt8912_wxga>;
-			};
-		};
-	};
-
 };
 
 &lcdif {
@@ -912,33 +852,10 @@
 	status = "okay";
 
 	panel@0 {
-		compatible = "forlinx,mipi7";
+		compatible = "aml500h25103";
 		reg = <0>;
-	};
-	/*
-	port@1 {
-		dsim_to_lt8912_480p: endpoint {
-			remote-endpoint = <&lt8912_from_dsim_480p>;
-		};
-	};
-
-	port@2 {
-		dsim_to_lt8912_720p: endpoint {
-			remote-endpoint = <&lt8912_from_dsim_720p>;
-		};
-	};
-
-	port@3 {
-		dsim_to_lt8912_1080p: endpoint {
-			remote-endpoint = <&lt8912_from_dsim_1080p>;
-		};
-	};
-
-	port@4 {
-		dsim_to_lt8912_wxga: endpoint {
-			remote-endpoint = <&lt8912_from_dsim_wxga>;
-		};
-	};*/
+		status = "okay";
+ 	};
 
 };
 

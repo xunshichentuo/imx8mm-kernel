@@ -349,6 +349,7 @@ struct sec_mipi_dsim {
 	.m = (mm),					\
 	.s = (ss)
 
+static struct dsim_hblank_par lt8912_custom_hblank;
 static const struct dsim_hblank_par hblank_4lanes[] = {
 	/* {  88, 148, 44 } */
 	{ DSIM_HBLANK_PARAM("1920x1080", 60,  60, 105,  27, 4), },
@@ -1003,9 +1004,6 @@ static void sec_mipi_dsim_config_dphy(struct sec_mipi_dsim *dsim)
 	struct drm_display_mode mode;
 
 	key.bit_clk = DIV_ROUND_CLOSEST_ULL(dsim->bit_clk, 1000);
-	//mipi bit_clk is double
-	if(key.bit_clk == 264)
-        	 key.bit_clk = 528;
 	/* '1280x720@60Hz' mode with 2 data lanes
 	 * requires special fine tuning for DPHY
 	 * TIMING config according to the tests.
@@ -1146,6 +1144,7 @@ int sec_mipi_dsim_check_pll_out(void *driver_private,
 	const struct sec_mipi_dsim_plat_data *pdata = dsim->pdata;
 	const struct dsim_hblank_par *hpar;
 	const struct dsim_pll_pms *pms;
+	uint32_t p = 0, m = 0, s = 0, mid_div = 75;
 
 	bpp = mipi_dsi_pixel_format_to_bpp(dsim->format);
 	if (bpp < 0)
@@ -1162,14 +1161,8 @@ int sec_mipi_dsim_check_pll_out(void *driver_private,
 
 	dsim->pix_clk = DIV_ROUND_UP_ULL(pix_clk, 1000);
 	dsim->bit_clk = DIV_ROUND_UP_ULL(bit_clk, 1000);
-
-	//dsim->pms = 0x4210;
-	//S=0 M=98 P=5 lcd 7
-	dsim->pms = (5 << 13) | (98 << 3) | (0 << 0);
-	dsim->hpar = NULL;
-	if (dsim->panel)
-		return 0;
-
+#if 0
+	if(strncmp("lt8912_custom", mode->name, 13)) {
 	if (dsim->mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE) {
 		hpar = sec_mipi_dsim_get_hblank_par(mode->name,
 						    mode->vrefresh,
@@ -1190,6 +1183,60 @@ int sec_mipi_dsim_check_pll_out(void *driver_private,
 		dsim->pms = PLLCTRL_SET_P(pms->p) |
 			    PLLCTRL_SET_M(pms->m) |
 			    PLLCTRL_SET_S(pms->s);
+		}
+	} else
+#endif
+	{
+		pms = sec_mipi_dsim_get_pms(dsim->bit_clk);
+		if(pms) {
+			dsim->pms = PLLCTRL_SET_P(pms->p) |
+				    PLLCTRL_SET_M(pms->m) |
+			    	    PLLCTRL_SET_S(pms->s);
+		} else {
+                	while(bit_clk < 350000000 && s < 3) {
+                        	s++;
+	                        bit_clk = bit_clk << 1;
+        	        }
+
+        	        p =  mid_div * 27000000 / bit_clk;
+                	while(p > 5 && mid_div > 25)
+	                {
+        	                mid_div--;
+                	        p =  mid_div * 27000000 / bit_clk;
+
+        	        }
+                	while(p < 3 && mid_div < 125)
+	                {
+        	                mid_div++;
+                	        p =  mid_div * 27000000 / bit_clk;
+
+        	        }
+
+        	        m = DIV_ROUND_UP_ULL(bit_clk * p, 27000000);
+
+        	        dsim->pms = (p << 13) | (m << 3) | (s);
+		}
+                //printk("%s: bitclk %llu pixclk %llu pms %X \n", __func__, dsim->bit_clk, dsim->pix_clk, dsim->pms);
+
+		dsim->hpar = NULL;
+		if (dsim->panel)
+			return 0;
+
+		if (dsim->mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE) {
+			hpar = sec_mipi_dsim_get_hblank_par(mode->name,
+							    mode->vrefresh,
+							    dsim->lanes);
+		}
+
+		if (hpar) {
+			dsim->hpar = hpar;
+		} else {
+
+			lt8912_custom_hblank.hfp_wc = (mode->htotal - mode->hsync_end) * (bpp >> 3) / dsim->lanes - 6;
+			lt8912_custom_hblank.hbp_wc = (mode->hsync_start - mode->hdisplay) * (bpp >> 3) / dsim->lanes - 6;
+			lt8912_custom_hblank.hsa_wc = (mode->hsync_end - mode->hsync_start) * (bpp >> 3) / dsim->lanes - 6;
+			dsim->hpar = &lt8912_custom_hblank;
+		}
 	}
 
 	return 0;
